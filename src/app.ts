@@ -5,13 +5,6 @@ enum validType {
     vText
 };
 
-const rootElement = document.getElementById("app")! as HTMLElement;
-
-const idFormTemplate = document.querySelector("#project-input")! as HTMLTemplateElement;
-const form = idFormTemplate.content.cloneNode(true)! as HTMLElement;
-//console.log(document.getElementById("project-input"));
-rootElement.append(form);
-
 function validate(value: any, type: validType): boolean {
     let regex: RegExp;
     switch (type) {
@@ -31,11 +24,13 @@ function validate(value: any, type: validType): boolean {
 
 
 } */
+
 interface IProject {
     title: string,
     description: string,
     people: number
 }
+
 interface IProjects {
     readonly projects: IProject[];
     add(proj: IProject): void;
@@ -49,27 +44,80 @@ class CProjects implements IProjects {
     }
 
     add(proj: IProject) {
-        this.projects.push(proj);
+        this._projectsList.push(proj);
     }
 
-    renderProjToTemplate(hook: HTMLElement) {
-        const title = document.getElementById("title") as HTMLInputElement;
-        const description = document.getElementById("description") as HTMLTextAreaElement;
-        const people = document.getElementById("people") as HTMLInputElement;
+    renderProj(hook: HTMLElement) {
         const liTemp = document.getElementById("single-project")! as HTMLTemplateElement;
-        const liProj = liTemp.content.querySelector("li") as HTMLLIElement;
-        liProj.textContent = `<h2> ${title}</h2>
-        <p> ${description} </p>
-        <p> people: ${people} </p>`;
+
+
+
+        const projListTemplate = document.getElementById("project-list") as HTMLTemplateElement;
+        const projList = projListTemplate.content.cloneNode(true) as HTMLElement;
+        let projUL: HTMLUListElement;
+        if (document.querySelector("ul"))
+            projUL = document.querySelector("ul")!
+        else projUL = projList.querySelector("ul")!;
+
+
+        for (let proj of this._projectsList) {
+        const newLiElem = document.importNode(liTemp.content, true);
+        const liProj = newLiElem.querySelector("li") as HTMLLIElement;
+
+           /*  let eTitle = document.createElement("h2") as HTMLElement;
+            eTitle.textContent = proj.title;
+            liProj.appendChild(eTitle);
+            let eDescr = document.createElement("p") as HTMLElement;
+            eDescr.textContent = proj.description;
+            liProj.appendChild(eDescr);
+            let ePeople = document.createElement("p") as HTMLElement;
+            ePeople.textContent = "people:" + proj.people.toString();
+            liProj.appendChild(ePeople);
+            console.log(liTemp); */
+            //   newLiElem.textContent = `<h2> ${proj.title}</h2>
+            //  <p> ${proj.description} </p>
+            // <p> people: ${proj.people} </p>`;
+
+        }
+        projUL.appendChild(newLiElem);
+
+        if (!document.querySelector("ul"))
+          hook.appendChild(projList);
+
+
+
+        console.log(projUL);
+
+
 
 
     }
 }
-const submitHandler = () => {
-    form.querySelector
+
+const savedProjects = new CProjects();
+
+const submitHandler = (event: Event) => {
+    event.preventDefault();
+    const title = document.getElementById("title") as HTMLInputElement;
+    const description = document.getElementById("description") as HTMLTextAreaElement;
+    const people = document.getElementById("people") as HTMLInputElement;
+    savedProjects.add({
+        title: title.value,
+        description: description.value,
+        people: +people.value
+    });
+    console.log(savedProjects.projects);
+    savedProjects.renderProj(document.getElementById("app")!);
+
 
 }
-form.querySelector("button")?.addEventListener("submit", submitHandler)
+
+const rootElement = document.getElementById("app")! as HTMLElement;
+const idFormTemplate = document.querySelector("#project-input")! as HTMLTemplateElement;
+const form = idFormTemplate.content.cloneNode(true)! as HTMLElement;
+rootElement.append(form);
+document.querySelector("form")?.addEventListener("submit", submitHandler)
+console.log(document.querySelector("button"));
 /* const inputFormControls= form.querySelectorAll("input");
 
 for(let inputElement of inputFormControls)
