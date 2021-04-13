@@ -49,52 +49,34 @@ class CProjects implements IProjects {
 
     renderProj(hook: HTMLElement) {
         const liTemp = document.getElementById("single-project")! as HTMLTemplateElement;
-
-
-
         const projListTemplate = document.getElementById("project-list") as HTMLTemplateElement;
         const projList = projListTemplate.content.cloneNode(true) as HTMLElement;
         let projUL: HTMLUListElement;
         if (document.querySelector("ul"))
             projUL = document.querySelector("ul")!
         else projUL = projList.querySelector("ul")!;
+        projUL.innerHTML="";
 
 
         for (let proj of this._projectsList) {
-        const newLiElem = document.importNode(liTemp.content, true);
-        const liProj = newLiElem.querySelector("li") as HTMLLIElement;
+            const newLiElem = document.importNode(liTemp.content, true);
+            const liProj = newLiElem.querySelector("li") as HTMLLIElement;
+            console.log("LI-Proj");
+            console.log(proj, liProj);
+            liProj.innerHTML = `<h2> ${proj.title}</h2>
+          <p> ${proj.description} </p>
+         <p> people: ${proj.people} </p>`;
 
-           /*  let eTitle = document.createElement("h2") as HTMLElement;
-            eTitle.textContent = proj.title;
-            liProj.appendChild(eTitle);
-            let eDescr = document.createElement("p") as HTMLElement;
-            eDescr.textContent = proj.description;
-            liProj.appendChild(eDescr);
-            let ePeople = document.createElement("p") as HTMLElement;
-            ePeople.textContent = "people:" + proj.people.toString();
-            liProj.appendChild(ePeople);
-            console.log(liTemp); */
-            //   newLiElem.textContent = `<h2> ${proj.title}</h2>
-            //  <p> ${proj.description} </p>
-            // <p> people: ${proj.people} </p>`;
+            projUL.appendChild(newLiElem);
 
+    
+            console.log(projUL);
         }
-        projUL.appendChild(newLiElem);
-
         if (!document.querySelector("ul"))
-          hook.appendChild(projList);
-
-
-
-        console.log(projUL);
-
-
-
-
+        hook.appendChild(projList);
+        console.log(this.projects);
     }
 }
-
-const savedProjects = new CProjects();
 
 const submitHandler = (event: Event) => {
     event.preventDefault();
@@ -109,8 +91,8 @@ const submitHandler = (event: Event) => {
     console.log(savedProjects.projects);
     savedProjects.renderProj(document.getElementById("app")!);
 
-
 }
+const savedProjects = new CProjects();
 
 const rootElement = document.getElementById("app")! as HTMLElement;
 const idFormTemplate = document.querySelector("#project-input")! as HTMLTemplateElement;
@@ -118,6 +100,7 @@ const form = idFormTemplate.content.cloneNode(true)! as HTMLElement;
 rootElement.append(form);
 document.querySelector("form")?.addEventListener("submit", submitHandler)
 console.log(document.querySelector("button"));
+
 /* const inputFormControls= form.querySelectorAll("input");
 
 for(let inputElement of inputFormControls)
