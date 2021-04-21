@@ -1,5 +1,21 @@
+// drag&drop interfaces
+
+interface Draggable {
+    dragStartHandler(event: DragEvent): void;
+    dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+    dragOverHandler(event: DragEvent): void;
+    dropHandler(event: DragEvent): void;
+    dragLeaveHandler(event: DragEvent): void;
+}
+//----------------------------------------------------------
+
 enum ProjectStatus { Active, Finished };
+
 //class Project
+
 class Project {
     constructor(
         public id: string,
@@ -37,7 +53,22 @@ class ProjectState extends State<Project>{
             ProjectStatus.Active
         );
         this.projects.push(newProject);
-        for (const listenerFn of this.listeners) {
+        this.updateListeners();
+    }
+
+    moveProject(projectID: string, newStatus: ProjectStatus) {
+
+        const project = this.projects.find((proj) => proj.id === projectID);
+       if(project&&project.status!=newStatus){
+           project.status = newStatus;
+           this.updateListeners();
+       }
+
+       
+    }
+
+    private updateListeners(){
+             for (const listenerFn of this.listeners) {
             listenerFn(this.projects.slice());
         }
     }
@@ -69,19 +100,19 @@ function validate(validatableInput: Validatable) {
     }
     if (validatableInput.minLength != null && (typeof (validatableInput.value) === "string")) {
         isValid =
-            isValid && validatableInput.value.length > validatableInput.minLength
+            isValid && validatableInput.value.length >= validatableInput.minLength
     }
     if (validatableInput.maxLength != null && (typeof (validatableInput.value) === "string")) {
         isValid =
-            isValid && validatableInput.value.length < validatableInput.maxLength
+            isValid && validatableInput.value.length <= validatableInput.maxLength
     }
     if (validatableInput.min != null && (typeof (validatableInput.value) === "number")) {
         isValid =
-            isValid && validatableInput.value > validatableInput.min
+            isValid && validatableInput.value >= validatableInput.min
     }
     if (validatableInput.max != null && (typeof (validatableInput.value) === "number")) {
         isValid =
-            isValid && validatableInput.value < validatableInput.max
+            isValid && validatableInput.value <= validatableInput.max
     }
     return isValid;
 
@@ -133,9 +164,55 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement>{
     abstract configure(): void;
     abstract renderContent(): void;
 }
+//ProjectItem class
+class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements Draggable {
+
+    get persons() {
+        if (this.project.people === 1)
+            return "1 person";
+        else
+            return `${this.project.people} persons`;
+
+
+    }
+
+    constructor(hostId: string, private project: Project) {
+        super("single-project", hostId, false, project.id);
+        this.project = project;
+
+        this.configure();
+
+        this.renderContent();
+
+    }
+
+    configure() {
+        this.element.addEventListener("dragstart", this.dragStartHandler);
+        this.element.addEventListener("dragend", this.dragEndHandler);
+
+    }
+
+    renderContent() {
+        this.element.querySelector("h2")!.textContent = this.project.title;
+        this.element.querySelector("h3")!.textContent = `${this.persons} assigned`;
+        this.element.querySelector("p")!.textContent = this.project.description;
+
+    }
+    @autobind
+    dragStartHandler(event: DragEvent) {
+        event.dataTransfer!.setData('text/plain', this.project.id);
+        event.dataTransfer!.effectAllowed = "move";
+    }
+
+    @autobind
+    dragEndHandler(_: DragEvent) {
+        console.log('dragEnd');
+    }
+}
+
 //ProjectListClass
 
-class ProjectListClass extends Component<HTMLDivElement, HTMLElement>{
+class ProjectListClass extends Component<HTMLDivElement, HTMLElement> implements DragTarget {
 
 
     assignProjects: Project[];
@@ -150,6 +227,12 @@ class ProjectListClass extends Component<HTMLDivElement, HTMLElement>{
     }
 
     configure() {
+
+        this.element.addEventListener("dragover", this.dragOverHandler)
+        this.element.addEventListener("drop", this.dropHandler)
+        this.element.addEventListener("dragleave", this.dragLeaveHandler)
+
+
 
         projectState.addListener((projects: Project[]) => {
             const relevantProjects = projects.filter((proj) => {
@@ -172,19 +255,40 @@ class ProjectListClass extends Component<HTMLDivElement, HTMLElement>{
     private renderProjects() {
         document.getElementById(`${this.type}-projects-lists`)!.innerHTML = "";
         for (const proj of this.assignProjects) {
-
-            const liElem = document.createElement("li");
-            liElem.textContent = `Project title: ${proj.title}`;
-            //  Description: ${proj.description};
-            //   Number of People: ${proj.people}`;
-            document.getElementById(`${this.type}-projects-lists`)!.insertAdjacentElement("beforeend", liElem);
-
-
-
+            new ProjectItem(this.element.querySelector('ul')!.id, proj);
+            //   document.getElementById(`${this.type}-projects-lists`)!.insertAdjacentElement("beforeend", projItem);
         }
+    }
+
+    @autobind
+    dragOverHandler(event: DragEvent) {
+        if (event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+            event.preventDefault();
+            const listEl: HTMLUListElement = this.element.querySelector("ul")!;
+            listEl.classList.add("droppable");
+        }
+
 
     }
 
+    @autobind
+    dragLeaveHandler(event: DragEvent) {
+        if (event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+            // event.preventDefault();   
+            const listEl: HTMLUListElement = this.element.querySelector("ul")!;
+            listEl.classList.remove("droppable");
+        }
+
+
+
+
+    }
+
+    @autobind
+    dropHandler(event: DragEvent) {
+        projectState.moveProject(event.dataTransfer!.getData('text/plain'),
+        this.type==='active'? ProjectStatus.Active: ProjectStatus.Finished);
+    }
 
 }
 
